@@ -233,7 +233,18 @@ function setFurthestStairs() {
 function spawnItemsForFloor() {
     if(player.floor === 5) {
         let m = stairsPos;
-        items.push({x:m.x-1, y:m.y, type:'merchant'}, {x:m.x-1, y:m.y-1, type:'potion', cost:5}, {x:m.x, y:m.y-1, type:'sword', cost:5}, {x:m.x+1, y:m.y-1, type:'torch', cost:5}, {x:m.x+1, y:m.y, type:'shield', cost:5});
+        const placeShopItem = (ox, oy, type, cost) => {
+            let nx = m.x + ox, ny = m.y + oy;
+            if(nx >= 0 && nx < MAP_SIZE && ny >= 0 && ny < MAP_SIZE) {
+                map[ny][nx] = 0; // Ensure merchant area is reachable
+                items.push({x:nx, y:ny, type, cost});
+            }
+        };
+        placeShopItem(-1, 0, 'merchant');
+        placeShopItem(-1, -1, 'potion', 5);
+        placeShopItem(0, -1, 'sword', 5);
+        placeShopItem(1, -1, 'torch', 5);
+        placeShopItem(1, 0, 'shield', 5);
     } else {
         spawnItem('torch'); 
         if(Math.random() < 0.20) spawnItem('sword'); 
@@ -284,6 +295,7 @@ function tryMove(k) {
             enemy.dead = true; gainXp(enemy.xp); 
             if(Math.random() < enemy.drop) items.push({x:nx, y:ny, type: Math.random() > 0.1 ? 'coin' : 'potion'});
         }
+        if(torchActive) { inv.torchDur--; if(inv.torchDur <= 0) { torchActive = false; AudioEngine.sfx('torch'); } }
         moveEnemies();
     } else if(map[ny][nx] === 0) { 
         player.x = nx; player.y = ny;
@@ -319,10 +331,19 @@ function moveEnemies() {
                 shake(5);
             } e.charging = false;
         } else if(dist < 6) { 
-            const mx = player.x > e.x ? 1 : player.x < e.x ? -1 : 0, my = player.y > e.y ? 1 : player.y < e.y ? -1 : 0;
-            if(map[e.y+my] && map[e.y+my][e.x+mx] === 0 && !enemies.some(en => !en.dead && en.x === e.x+mx && en.y === e.y+my)) { 
-                e.x += mx; e.y += my; 
+            const mx = player.x > e.x ? 1 : player.x < e.x ? -1 : 0;
+            const my = player.y > e.y ? 1 : player.y < e.y ? -1 : 0;
+            
+            // Fixed corner clipping: Check both axes separately
+            let nextX = e.x, nextY = e.y;
+            if (map[e.y][e.x + mx] === 0 && !enemies.some(en => !en.dead && en.x === e.x + mx && en.y === e.y)) {
+                nextX += mx;
             }
+            if (map[e.y + my][nextX] === 0 && !enemies.some(en => !en.dead && en.x === nextX && en.y === e.y + my)) {
+                nextY += my;
+            }
+            e.x = nextX; e.y = nextY;
+            
             if(Math.abs(player.x-e.x) <= 1 && Math.abs(player.y-e.y) <= 1) e.charging = true; 
         }
         if(player.hp <= 0) { player.hp = 0; endGame(false); }
@@ -453,6 +474,7 @@ function endGame(win) {
 
 generateMap();
 window.addEventListener('keydown', e => handleInput(e.key));
+window.addEventListener('pointerdown', () => AudioEngine.init(), { once: true });
 </script>
 </body>
 </html>
