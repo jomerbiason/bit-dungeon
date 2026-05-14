@@ -2,10 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
-<title>Bit-Dungeon: Full HUD Edition</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<!-- HIDES ADDRESS BAR ON MOBILE INSTALL -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+
+<title>Bit-Dungeon</title>
 <style>
     *{ box-sizing:border-box; margin:0; padding:0; image-rendering:pixelated; user-select:none; touch-action: none; }
+    
     body{ 
         background:#0a0a0a; 
         color:#fff; 
@@ -13,7 +21,7 @@
         display:flex; 
         align-items:center; 
         justify-content:center; 
-        height:100vh; 
+        height:100dvh; /* Dynamic viewport height */
         width:100vw; 
         overflow:hidden;
     }
@@ -25,21 +33,14 @@
         justify-content: space-evenly;
         width: 100%;
         max-width: 950px;
-        padding: 10px;
+        padding: 5px;
     }
 
     /* HUD BOXES */
     .hud-column { display: flex; flex-direction: column; gap: 8px; width: 140px; }
     .game-title { 
-        font-weight: bold; 
-        font-size: 14px; 
-        color: #f0f; 
-        text-align: center; 
-        background: #111; 
-        border: 2px solid #333;
-        padding: 4px;
-        text-shadow: 2px 2px #000;
-        margin-bottom: 5px;
+        font-weight: bold; font-size: 14px; color: #f0f; text-align: center; 
+        background: #111; border: 2px solid #333; padding: 4px; text-shadow: 2px 2px #000;
     }
     .hud-panel { background: #1a1a1a; border: 2px solid #444; padding: 4px; display: grid; gap: 3px; }
     .hud-item { background: #111; border: 1px solid #333; padding: 3px 5px; display: flex; justify-content: space-between; align-items: center; font-size: 10px; }
@@ -48,32 +49,27 @@
     /* CONTROLS */
     .side-controls { display: flex; flex-direction: column; align-items: center; gap: 10px; }
     .dpad, .diamond { 
-        display: grid; 
-        grid-template-columns: repeat(3, 58px); 
-        grid-template-rows: repeat(3, 58px); 
-        gap: 4px;
+        display: grid; grid-template-columns: repeat(3, 58px); grid-template-rows: repeat(3, 58px); gap: 4px;
     }
     .pixel-btn { 
-        background: #222; 
-        border: 3px solid #444; 
-        color: #eee; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        font-size: 24px; 
-        box-shadow: inset -3px -3px #000; 
-        border-radius: 8px;
+        background: #222; border: 3px solid #444; color: #eee; 
+        display: flex; align-items: center; justify-content: center; 
+        font-size: 24px; box-shadow: inset -3px -3px #000; border-radius: 8px;
     }
     .pixel-btn:active { background: #555; transform: scale(0.95); }
     
-    /* MAPPING */
     .d-up{ grid-column:2; grid-row:1; } .d-left{ grid-column:1; grid-row:2; } .d-right{ grid-column:3; grid-row:2; } .d-down{ grid-column:2; grid-row:3; }
     .btn-swd{ grid-column:1; grid-row:2; } .btn-shd{ grid-column:2; grid-row:1; } .btn-trc{ grid-column:2; grid-row:3; } .btn-pot{ grid-column:3; grid-row:2; }
 
     /* SCREEN */
     .screen-container { position: relative; border: 6px solid #333; background: #000; display: flex; box-shadow: 0 0 20px rgba(0,0,0,1); }
-    canvas { background: #050505; width: 320px; height: 320px; }
-    .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
+    canvas { background: #050505; width: 320px; height: 320px; max-height: 85dvh; }
+    
+    .overlay { 
+        position: absolute; inset: 0; background: rgba(0,0,0,0.95); 
+        display: none; flex-direction: column; align-items: center; justify-content: center; 
+        z-index: 100; text-align: center; padding: 10px;
+    }
 
     @media (orientation: portrait) {
         body::after { content: "PLEASE ROTATE YOUR PHONE"; position: fixed; inset: 0; background: #000; color: #fff; display: flex; align-items: center; justify-content: center; z-index: 999; }
@@ -106,17 +102,16 @@
         </div>
     </div>
 
-	<!-- CENTER SCREEN OVERLAY -->
-	<div class="screen-container" id="shake-target">
-		<canvas id="game" width="320" height="320"></canvas>
-		
-		<div class="overlay" id="gameOver">
-			<h1 id="statusTitle" style="font-size: 24px; letter-spacing: 2px;">THE DUNGEON CONSUMES YOU</h1>
-			<p id="stats-summary" style="font-size: 11px; margin: 15px; color: #888; font-style: italic;"></p>
-			<p style="font-size: 10px; color: #600; margin-bottom: 20px;">YOU ARE NOW PART OF THE WALLS</p>
-			<button onclick="location.reload()" style="padding:12px 24px; cursor:pointer; background:#200; color:#f00; border:2px solid #600; font-family:'Courier New'; font-weight:bold; box-shadow: 0 0 10px #400;">ANOTHER SOUL ENTERS</button>
-		</div>
-	</div>
+    <!-- CENTER SCREEN -->
+    <div class="screen-container" id="shake-target">
+        <canvas id="game" width="320" height="320"></canvas>
+        <div class="overlay" id="gameOver">
+            <h1 id="statusTitle" style="font-size: 20px; letter-spacing: 2px; color:#f00;">THE DUNGEON CONSUMES YOU</h1>
+            <p id="stats-summary" style="font-size: 11px; margin: 15px; color: #888; font-style: italic;"></p>
+            <p style="font-size: 10px; color: #600; margin-bottom: 20px;">YOU ARE NOW PART OF THE WALLS</p>
+            <button onclick="location.reload()" style="padding:12px 24px; cursor:pointer; background:#200; color:#f00; border:2px solid #600; font-family:monospace; font-weight:bold;">ANOTHER SOUL ENTERS</button>
+        </div>
+    </div>
 
     <!-- RIGHT SIDE -->
     <div class="side-controls">
@@ -142,7 +137,6 @@
 </div>
 
 <script>
-// --- GAME DATA ---
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const shakeTarget = document.getElementById('shake-target');
@@ -164,7 +158,6 @@ let player = { x:1, y:1, hp:20, maxHp:20, atk:1, def:0, lvl:1, xp:0, floor:1, sw
 let currentWallColor = '#444';
 let slashState = 0;
 
-// --- AUDIO ---
 const AudioEngine = {
     ctx: null, musicStarted: false,
     init() { if (!this.ctx) { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.startMusic(); } if (this.ctx.state === 'suspended') this.ctx.resume(); },
@@ -219,18 +212,13 @@ function shake(amt = 4) {
     setTimeout(() => shakeTarget.style.transform = 'translate(0,0)', 50);
 }
 
-// --- WORLD GENERATION ---
 function generateMap() {
     const isSpecialFloor = (player.floor === 1 || player.floor === 5 || player.floor === 10);
     const useMaze = !isSpecialFloor && Math.random() > 0.5;
     const themes = ['#2d3b2d', '#3b2d2d', '#3b362d', '#2d323b', '#423d21'];
     currentWallColor = themes[Math.floor(Math.random() * themes.length)];
-
     if (useMaze) generateMaze(); else generateCaves();
-    spawnItemsForFloor(); 
-    spawnEnemiesForFloor(); 
-    updateExploration(); 
-    updateUI();
+    spawnItemsForFloor(); spawnEnemiesForFloor(); updateExploration(); updateUI();
 }
 
 function generateCaves() {
@@ -299,42 +287,85 @@ function spawnEnemiesForFloor() {
     }
 }
 
-// --- CONTROLS ---
 function handleInput(key) {
     if(player.hp <= 0) return;
     const k = key.toLowerCase(); AudioEngine.init();
     if(['w','a','s','d','q','e','r','t'].includes(k)) AudioEngine.sfx('ui-click');
     if(['w','a','s','d'].includes(k)) tryMove(k);
-    if(k==='q' || k==='x') { if(inv.swordDur > 0) { player.swdOn = !player.swdOn; AudioEngine.sfx(player.swdOn?'sword-on':'sword-off'); } }
-    if(k==='e' || k==='y') { if(inv.shieldDur > 0) { player.shdOn = !player.shdOn; AudioEngine.sfx(player.shdOn?'shield-on':'shield-off'); } }
+    if(k==='q') { if(inv.swordDur > 0) { player.swdOn = !player.swdOn; AudioEngine.sfx(player.swdOn?'sword-on':'sword-off'); } }
+    if(k==='e') { if(inv.shieldDur > 0) { player.shdOn = !player.shdOn; AudioEngine.sfx(player.shdOn?'shield-on':'shield-off'); } }
     if(k==='r') { if(inv.torchDur > 0) { torchActive = !torchActive; AudioEngine.sfx('torch'); } }
-    if(k==='t' || k==='b') { if(inv.potions > 0 && player.hp < player.maxHp) { player.hp = Math.min(player.maxHp, player.hp + 8); inv.potions--; AudioEngine.sfx('potion'); } }
+    if(k==='t') { if(inv.potions > 0 && player.hp < player.maxHp) { player.hp = Math.min(player.maxHp, player.hp + 8); inv.potions--; AudioEngine.sfx('potion'); } }
     updateUI();
 }
 
 function tryMove(k) {
-    let dx=0, dy=0; if(k==='w') dy=-1; if(k==='s') dy=1; if(k==='a') dx=-1; if(k==='d') dx=1;
+    let dx=0, dy=0; 
+    if(k==='w') dy=-1; if(k==='s') dy=1; 
+    if(k==='a') dx=-1; if(k==='d') dx=1;
+    
     const nx = player.x + dx, ny = player.y + dy;
+    
+    // 1. Boundary Check
     if(nx < 0 || nx >= MAP_SIZE || ny < 0 || ny >= MAP_SIZE) return;
+
+    // 2. Enemy Collision/Combat Check
     const aliveEnemyIdx = enemies.findIndex(e => e.x === nx && e.y === ny && !e.dead);
+    
     if(aliveEnemyIdx > -1) { 
         let enemy = enemies[aliveEnemyIdx];
         let pAtk = player.atk + (player.swdOn ? 4 : 0);
+        
         enemy.hp -= Math.max(1, pAtk - enemy.def);
         AudioEngine.sfx(player.swdOn ? 'sword-hit' : 'punch');
-        if(player.swdOn) { inv.swordDur--; if(inv.swordDur <= 0) { player.swdOn=false; AudioEngine.sfx('sword-off'); } }
-        enemy.slashTimer = 6; enemy.slashDir = (slashState++ % 2 === 0) ? '/' : '\\'; shake(2);
-        if(enemy.hp <= 0) { enemy.dead = true; gainXp(enemy.xp); if(Math.random()<enemy.drop) items.push({x:nx, y:ny, type: Math.random()>0.1?'coin':'potion'}); }
-    } else if(map[ny][nx] === 0) { 
-        player.x = nx; player.y = ny;
-        if(torchActive && --inv.torchDur <= 0) { torchActive = false; AudioEngine.sfx('torch'); }
+        
+        if(player.swdOn) { 
+            inv.swordDur--; 
+            if(inv.swordDur <= 0) { player.swdOn=false; AudioEngine.sfx('sword-off'); } 
+        }
+        
+        enemy.slashTimer = 6; 
+        enemy.slashDir = (slashState++ % 2 === 0) ? '/' : '\\'; 
+        shake(2);
+
+        if(enemy.hp <= 0) { 
+            enemy.dead = true; 
+            gainXp(enemy.xp); 
+            if(Math.random() < enemy.drop) {
+                items.push({x:nx, y:ny, type: Math.random() > 0.1 ? 'coin' : 'potion'});
+            }
+        }
+        
+        // CRITICAL: Stop here so player doesn't move into the enemy's spot
+        moveEnemies(); 
+        updateUI();
+        return; 
+    } 
+
+    // 3. Wall/Movement Check
+    // Only happens if no enemy was hit
+    if(map[ny][nx] === 0) { 
+        player.x = nx; 
+        player.y = ny;
+        if(torchActive && --inv.torchDur <= 0) { 
+            torchActive = false; 
+            AudioEngine.sfx('torch'); 
+        }
         updateExploration(); 
     }
+
     checkItems();
+
+    // 4. Stairs Check
     if(player.x === stairsPos.x && player.y === stairsPos.y) {
-        if(player.floor === 10) endGame(true); else { player.floor++; generateMap(); AudioEngine.sfx('pickup'); }
-    } else moveEnemies(); 
+        if(player.floor === 10) endGame(true); 
+        else { player.floor++; generateMap(); AudioEngine.sfx('pickup'); }
+    } else {
+        moveEnemies(); 
+    }
+    
     if(player.hp <= 0) endGame(false);
+    updateUI();
 }
 
 function moveEnemies() {
@@ -435,26 +466,15 @@ function updateUI() {
 
 function endGame(win) {
     const overlay = document.getElementById('gameOver');
-    const title = document.getElementById('statusTitle');
     const summary = document.getElementById('stats-summary');
-    const btn = overlay.querySelector('button');
-
+    const title = document.getElementById('statusTitle');
     overlay.style.display = 'flex'; 
-
     if (win) {
-        title.textContent = "THE LIGHT REACHED";
-        title.style.color = "#0f0";
-        summary.textContent = `You escaped the depths after ${player.floor} floors.`;
-        btn.textContent = "RETURN TO THE DARK";
-        btn.style.background = "#020";
-        btn.style.color = "#0f0";
-        btn.style.border = "2px solid #060";
+        title.textContent = "THE LIGHT REACHED"; title.style.color = "#0f0";
+        summary.textContent = `You escaped after ${player.floor} floors.`;
     } else {
-        title.textContent = "THE DUNGEON CONSUMES YOU";
-        title.style.color = "#f00";
+        title.textContent = "THE DUNGEON CONSUMES YOU"; title.style.color = "#f00";
         summary.textContent = `Floor ${player.floor} claimed your spirit. Your bones join the pile.`;
-        btn.textContent = "ANOTHER SOUL ENTERS";
-        // Button styles are handled by the default CSS in the HTML block above
     }
 }
 
